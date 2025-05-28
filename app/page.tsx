@@ -69,7 +69,7 @@ export default function Home() {
           {chatHistory.map((chat, index) => (
             <div key={index} className="mb-4 flex flex-col gap-2">
               <div className="flex justify-end">
-                <div className="bg-blue-100 text-right text-blue-800 font-medium px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-[75%]">
+                <div className="bg-blue-50 text-right text-black font-medium px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-[75%]">
                   {chat.question}
                 </div>
               </div>
@@ -85,7 +85,7 @@ export default function Home() {
           {pendingQuestion && (
             <div className="mb-4 flex flex-col gap-2 opacity-70 italic select-none">
               <div className="flex justify-end">
-                <div className="bg-blue-100 text-right text-blue-800 font-medium px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-[75%]">
+                <div className="bg-blue-100 text-right text-black font-medium px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-[75%]">
                   {pendingQuestion}
                 </div>
               </div>
@@ -134,10 +134,10 @@ export default function Home() {
         <div className="mt-4 text-center">
           <button
             onClick={() => setSuggestions(getRoomSuggestions())}
-            className="bg-blue-100 text-blue-800 font-medium px-4 py-1 rounded hover:bg-blue-200"
+            className="bg-blue-100 text-black font-bold px-4 py-1 rounded hover:bg-blue-50"
             disabled={loading}
           >
-            Refresh Questions
+            Refresh
           </button>
         </div>
       </div>
