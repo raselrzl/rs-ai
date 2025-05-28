@@ -1,103 +1,139 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { askQuestion } from "./actions";
+import { CornerRightUp } from "lucide-react";
+import { AutoResizeTextarea } from "./component/AutoResizeTextarea";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [input, setInput] = useState("");
+  // chatHistory stores confirmed Q&A pairs
+  const [chatHistory, setChatHistory] = useState<
+    { question: string; answer: string }[]
+  >([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  // Track the question currently being answered (loading state)
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
+
+  // Ref for the chat container div
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleAsk = async () => {
+    if (!input.trim()) return;
+    setLoading(true);
+    setPendingQuestion(input); // Show loading for this question
+    setInput("");
+
+    const res = await askQuestion(input);
+
+    // Remove pending question and add real answer
+    setPendingQuestion(null);
+    setChatHistory((prev) => [
+      ...prev,
+      { question: res.question, answer: res.answer },
+    ]);
+    setSuggestions(res.suggestions);
+    setLoading(false);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setInput(suggestion);
+    // Wait a tick for input state to update, then ask
+    setTimeout(handleAsk, 0);
+  };
+
+  // Scroll to bottom when chatHistory or pendingQuestion changes
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [chatHistory, pendingQuestion]);
+
+  return (
+    <main className="p-4 sm:p-6 max-w-7xl w-full mx-auto flex justify-center flex-col items-center">
+      <div className=" flex flex-row min-w-full justify-between">
+        <p className="text-2xl font-extrabold">Flyg-Chat</p>
+        <p className="bg-gray-50 px-4 py-1 rounded-lg">Login</p>
+      </div>
+      <div className="mt-20 sm:mt-20 p-4 rounded-[10px] relative bg-white shadow-xl w-full max-w-5xl border border-gray-200">
+        {/* Chat history container with fixed height & scroll */}
+        <div className="text-center"><h1 className="text-xl font-bold my-5">Ask whatever you want?</h1></div>
+        <div
+          ref={chatContainerRef}
+          className="max-h-[600px] overflow-y-auto pt-10 pb-4 pr-4 pl-4 sm:pr-12 sm:pl-2 relative"
+        >
+          {chatHistory.map((chat, index) => (
+            <div key={index} className="mb-4 flex flex-col gap-2">
+              {/* User question - right aligned */}
+              <div className="flex justify-end">
+                <div className="bg-blue-100 text-right text-blue-800 font-medium px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-[75%]">
+                  {chat.question}
+                </div>
+              </div>
+
+              {/* AI answer - left aligned */}
+              <div className="flex justify-start">
+                <div className="bg-gray-100 text-black px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-[75%]">
+                  {chat.answer}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Show loading for pending question */}
+          {pendingQuestion && (
+            <div className="mb-4 flex flex-col gap-2 opacity-70 italic select-none">
+              <div className="flex justify-end">
+                <div className="bg-blue-100 text-right text-blue-800 font-medium px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-[75%]">
+                  {pendingQuestion}
+                </div>
+              </div>
+              <div className="flex justify-start">
+                <div className="bg-gray-100 text-black px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-[75%]">
+                  <span>Loading answer...</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Input field */}
+          <div className="mt-6 flex flex-row items-end bg-gray-50 rounded-2xl">
+            <AutoResizeTextarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onEnter={handleAsk}
+              disabled={loading}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <button
+              onClick={handleAsk}
+              disabled={loading}
+              className="bg-gray-200 text-black px-4 py-2 rounded-full disabled:opacity-50 hover:bg-gray-300 size-12"
+            >
+              {loading ? "Thinking..." : <CornerRightUp className="pr-1 mr-1"/>}
+            </button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </div>
+
+      {/* Suggestions section */}
+      <div className="mt-6 max-w-5xl">
+        <ul className="flex flex-wrap gap-2 min-h-[2.5rem]">
+          {suggestions.map((q, i) => (
+            <li key={i}>
+              <button
+                onClick={() => handleSuggestionClick(q)}
+                className="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded"
+                disabled={loading}
+              >
+                {q}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </main>
   );
 }
